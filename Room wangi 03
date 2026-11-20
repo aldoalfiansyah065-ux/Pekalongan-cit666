@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROOM WANGI v2.0</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #101010;
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+header {
+    background: #1c1c1c;
+    padding: 24px 18px;
+    border-bottom: 3px solid #f5d000;
+}
+
+header h1 {
+    color: #f5d000;
+    margin: 0;
+    font-size: 27px;
+}
+
+header p {
+    color: #888;
+    font-size: 12px;
+}
+
+.container {
+    padding: 16px;
+}
+
+.card {
+    background: #202020;
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    border: 1px solid #383838;
+}
+
+h2 {
+    color: #f5d000;
+    font-size: 17px;
+}
+
+.player {
+    background: #292929;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.player label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+select {
+    width: 100%;
+    padding: 12px;
+    background: #111;
+    color: white;
+    border: 1px solid #555;
+    border-radius: 7px;
+}
+
+button {
+    width: 100%;
+    padding: 14px;
+    background: #f5d000;
+    color: black;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    margin-top: 15px;
+    font-size: 15px;
+}
+
+.result {
+    text-align: center;
+    padding: 20px;
+    background: #111;
+    border-radius: 10px;
+}
+
+.result h1 {
+    font-size: 28px;
+}
+
+.valid {
+    color: #f5d000;
+}
+
+.invalid {
+    color: #ff4545;
+}
+
+.stats {
+    display: flex;
+    gap: 8px;
+}
+
+.stat {
+    flex: 1;
+    background: #292929;
+    padding: 13px 5px;
+    text-align: center;
+    border-radius: 8px;
+}
+
+.stat strong {
+    display: block;
+    font-size: 23px;
+    color: #f5d000;
+}
+
+.stat small {
+    font-size: 11px;
+    color: #aaa;
+}
+
+.history {
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+.danger {
+    background: #b32626;
+    color: white;
+}
+
+footer {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+    font-size: 11px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>ROOM WANGI</h1>
+    <p>PEKALONGAN-CIT666 | MASTER ONLY v2.0</p>
+</header>
+
+<div class="container">
+
+<div class="card">
+
+<h2>⚡ MATCH CONFIGURATION</h2>
+
+<p style="font-size:13px;color:#aaa">
+Target pertandingan: 5 pemain lawan harus memiliki rank MASTER.
+</p>
+
+<div id="players"></div>
+
+<button onclick="checkMatch()">
+CHECK MATCH
+</button>
+
+</div>
+
+<div class="card">
+
+<h2>🔍 MATCH RESULT</h2>
+
+<div class="result">
+    <h1 id="status">READY</h1>
+    <p id="message">Menunggu pemeriksaan pertandingan.</p>
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>📊 STATISTICS</h2>
+
+<div class="stats">
+
+<div class="stat">
+<strong id="total">0</strong>
+<small>TOTAL</small>
+</div>
+
+<div class="stat">
+<strong id="valid">0</strong>
+<small>MASTER ONLY</small>
+</div>
+
+<div class="stat">
+<strong id="invalid">0</strong>
+<small>INVALID</small>
+</div>
+
+</div>
+</div>
+
+<div class="card">
+
+<h2>📋 MATCH HISTORY</h2>
+
+<div id="history" class="history">
+Belum ada data.
+</div>
+
+<button class="danger" onclick="resetData()">
+RESET DATA
+</button>
+
+</div>
+
+</div>
+
+<footer>
+ROOM WANGI v2.0<br>
+PEKALONGAN-CIT666
+</footer>
+
+<script>
+
+const rankOptions = [
+    "Master",
+    "Grandmaster",
+    "Epic",
+    "Legend",
+    "Mythic",
+    "Mythical Honor",
+    "Mythical Glory",
+    "Mythical Immortal"
+];
+
+const players = document.getElementById("players");
+
+for (let i = 1; i <= 5; i++) {
+
+    let options = rankOptions.map(rank =>
+        `<option value="${rank}">${rank}</option>`
+    ).join("");
+
+    players.innerHTML += `
+        <div class="player">
+            <label>PLAYER LAWAN ${i}</label>
+            <select id="player${i}">
+                ${options}
+            </select>
+        </div>
+    `;
+}
+
+let matches = JSON.parse(
+    localStorage.getItem("roomWangiV2") || "[]"
+);
+
+function checkMatch() {
+
+    let ranks = [];
+
+    for (let i = 1; i <= 5; i++) {
+        ranks.push(
+            document.getElementById("player" + i).value
+        );
+    }
+
+    let isValid = ranks.every(
+        rank => rank === "Master"
+    );
+
+    let match = {
+        ranks: ranks,
+        valid: isValid,
+        date: new Date().toLocaleString("id-ID")
+    };
+
+    matches.unshift(match);
+
+    saveData();
+
+    const status = document.getElementById("status");
+    const message = document.getElementById("message");
+
+    if (isValid) {
+
+        status.innerText = "MATCH VALID";
+        status.className = "valid";
+
+        message.innerText =
+            "SEMUA 5 PEMAIN LAWAN MEMILIKI RANK MASTER.";
+
+    } else {
+
+        status.innerText = "MATCH INVALID";
+        status.className = "invalid";
+
+        let different = ranks
+            .map((rank, index) =>
+                rank !== "Master" ? index
